@@ -1,296 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
 <head>
-    <title>VibeTurn Web Player (Ejemplo)</title>
     <meta charset="UTF-8">
+    <title>VibeTurn Web Player</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* Estilos básicos para demostración */
-        body { font-family: sans-serif; padding: 10px; }
+        body { 
+            font-family: sans-serif; 
+            padding: 20px; 
+            max-width: 800px; 
+            margin: 0 auto; 
+        }
+        #youtube-input-container {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        #youtube-url {
+            flex-grow: 1;
+            padding: 8px;
+            margin-right: 10px;
+        }
         #player-container {
             position: relative;
             width: 100%;
-            max-width: 640px; /* O el tamaño que prefieras */
-            aspect-ratio: 16 / 9; /* Mantiene la proporción del video */
-            margin-bottom: 10px;
-            background-color: #000;
+            max-width: 640px;
+            aspect-ratio: 16 / 9;
+            margin-bottom: 15px;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        #youtube-player {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        #thumbnail {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
         }
-        #controls button { padding: 8px 12px; margin: 5px; }
-        #info { margin-top: 15px; border: 1px solid #ccc; padding: 10px; }
-        #info p { margin: 5px 0; }
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        #controls button {
+            padding: 8px 12px;
+        }
+        #info {
+            margin-top: 15px;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
+    <h1>VibeTurn - YouTube Video Player</h1>
 
-    <h1>VibeTurn - Reproductor Web</h1>
+    <div id="youtube-input-container">
+        <input type="text" id="youtube-url" placeholder="Pega aquí el enlace de YouTube">
+        <button onclick="loadYouTubeVideo()">Cargar Video</button>
+    </div>
 
     <div id="player-container">
-        <!-- El reproductor de audio se maneja con JavaScript -->
+        <img id="thumbnail" src="" alt="Miniatura del video" style="display:none;">
     </div>
 
     <div id="controls">
-        <button onclick="playPreviousTrack()">Anterior</button>
-        <button onclick="togglePlayPause()">Play/Pause (Web)</button>
-        <button onclick="playNextTrack()">Siguiente</button>
-        <button onclick="stopPlaybackAndNotify()">Detener (DEBUG)</button>
+        <button onclick="playPreviousTrack()" style="display:none;">Anterior</button>
+        <button onclick="togglePlayPause()" style="display:none;">Play/Pause</button>
+        <button onclick="playNextTrack()" style="display:none;">Siguiente</button>
     </div>
 
     <div id="info">
-        <h2>Información Actual:</h2>
-        <p>Estado: <span id="status">Listo</span></p>
-        <p>Video ID: <span id="videoId">N/A</span></p>
+        <h2>Información del Video:</h2>
+        <p>Estado: <span id="status">Esperando video</span></p>
         <p>Título: <span id="title">N/A</span></p>
-        <p>Artista: <span id="artist">N/A</span></p>
     </div>
 
     <script>
-        // --- Configuración ---
-        const playlistVideoUrls = [
-            'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Rick Astley - Never Gonna Give You Up
-            'https://www.youtube.com/watch?v=jNQXAC9IVRw', // me at the zoo (ejemplo corto)
-            'https://www.youtube.com/watch?v=V-Mxk_NqQ2A', // Luis Fonsi - Despacito ft. Daddy Yankee
-            'https://www.youtube.com/watch?v=kJQP7kiw5Fk'  // Ed Sheeran - Shape of You
-        ];
-        let currentPlaylistIndex = 0;
-        const initialVideoUrl = playlistVideoUrls[currentPlaylistIndex];
+        let currentVideoInfo = { 
+            url: null, 
+            audioUrl: null, 
+            videoUrl: null, 
+            thumbnailUrl: null, 
+            title: null 
+        };
+        let audioPlayer = new Audio();
 
-        // --- Variables Globales ---
-        var audioPlayer = new Audio(); // Audio player for streaming
-        var currentVideoInfo = { id: null, title: null, artist: null, artwork: null, audioUrl: null };
+        async function loadYouTubeVideo() {
+            const youtubeUrlInput = document.getElementById('youtube-url');
+            const videoUrl = youtubeUrlInput.value.trim();
 
-        // Función para obtener la URL de audio desde el backend
-        async function fetchAudioUrl(videoUrl) {
+            if (!videoUrl) {
+                alert('Por favor, ingresa un enlace de YouTube');
+                return;
+            }
+
             try {
-                const response = await fetch(`get_youtube_audio.php?url=${encodeURIComponent(videoUrl)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                const response = await fetch(`get_youtube_audio.php?url=${encodeURIComponent(videoUrl)}`);
                 const data = await response.json();
-                
+
                 if (data.error) {
-                    console.error('Error fetching audio URL:', data.error);
-                    return null;
+                    throw new Error(data.error);
                 }
-                
-                // Validar que la URL de audio sea válida
-                if (!data.audio_url || !data.audio_url.startsWith('http')) {
-                    console.error('Invalid audio URL:', data.audio_url);
-                    return null;
-                }
-                
-                return {
+
+                // Actualizar información del video
+                currentVideoInfo = {
+                    url: videoUrl,
                     audioUrl: data.audio_url,
-                    thumbnailUrl: data.thumbnail_url || ''
+                    videoUrl: data.video_with_audio_url,
+                    thumbnailUrl: data.thumbnail_url,
+                    title: null // Podrías extraer el título de YouTube si es posible
                 };
+
+                // Mostrar miniatura
+                const thumbnailEl = document.getElementById('thumbnail');
+                thumbnailEl.src = currentVideoInfo.thumbnailUrl;
+                thumbnailEl.style.display = 'block';
+
+                // Configurar audio
+                audioPlayer.src = currentVideoInfo.audioUrl;
+
+                // Actualizar información
+                document.getElementById('status').textContent = 'Video cargado';
+                document.getElementById('title').textContent = 'Título no disponible';
+
+                // Mostrar controles
+                document.querySelectorAll('#controls button').forEach(btn => btn.style.display = 'block');
+
             } catch (error) {
-                console.error('Error fetching audio URL:', error);
-                return null;
+                console.error('Error:', error);
+                alert('No se pudo cargar el video. Verifica el enlace.');
             }
         }
 
-        // --- Inicialización del reproductor de audio ---
-        async function initializeAudioPlayer() {
-            const audioInfo = await fetchAudioUrl(initialVideoUrl);
-            if (audioInfo && audioInfo.audioUrl) {
-                try {
-                    audioPlayer.src = audioInfo.audioUrl;
-                    currentVideoInfo.audioUrl = audioInfo.audioUrl;
-                    currentVideoInfo.artwork = audioInfo.thumbnailUrl;
-                    
-                    // Añadir listeners para manejar errores de carga de audio
-                    audioPlayer.addEventListener('error', (e) => {
-                        console.error('Audio error:', e);
-                        updateDisplayInfo('Error al cargar audio');
-                        playNextTrack(); // Intentar reproducir siguiente canción
-                    });
-
-                    updateDisplayInfo('ready');
-                } catch (error) {
-                    console.error('Error setting audio source:', error);
-                    updateDisplayInfo('Error al configurar audio');
-                }
-            } else {
-                updateDisplayInfo('No se pudo cargar audio');
-            }
-        }
-
-        // Inicializar el reproductor al cargar la página
-        window.addEventListener('load', initializeAudioPlayer);
-
-        // Función para manejar cambios de estado del reproductor de audio
-        function onAudioStateChange() {
-            audioPlayer.addEventListener('ended', () => {
-                playNextTrack();
-            });
-
-            audioPlayer.addEventListener('play', () => {
-                handlePlayingState();
-            });
-        }
-
-        // Inicializar los listeners de estado
-        onAudioStateChange();
-
-        async function playNextTrack() {
-            // Incrementar el índice de la playlist
-            currentPlaylistIndex = (currentPlaylistIndex + 1) % playlistVideoUrls.length;
-            
-            // Obtener la siguiente URL de video
-            const nextVideoUrl = playlistVideoUrls[currentPlaylistIndex];
-            
-            // Obtener la URL de audio del backend
-            const audioInfo = await fetchAudioUrl(nextVideoUrl);
-            if (audioInfo && audioInfo.audioUrl) {
-                try {
-                    audioPlayer.src = audioInfo.audioUrl;
-                    currentVideoInfo.audioUrl = audioInfo.audioUrl;
-                    currentVideoInfo.artwork = audioInfo.thumbnailUrl;
-                    await audioPlayer.play();
-                } catch (error) {
-                    console.error('Error playing next track:', error);
-                    updateDisplayInfo('Error al reproducir siguiente canción');
-                }
-            } else {
-                updateDisplayInfo('No se pudo cargar siguiente canción');
-            }
-        }
-
-        async function playPreviousTrack() {
-            // Decrementar el índice de la playlist
-            currentPlaylistIndex = (currentPlaylistIndex - 1 + playlistVideoUrls.length) % playlistVideoUrls.length;
-            
-            // Obtener la URL de video anterior
-            const previousVideoUrl = playlistVideoUrls[currentPlaylistIndex];
-            
-            // Obtener la URL de audio del backend
-            const audioInfo = await fetchAudioUrl(previousVideoUrl);
-            if (audioInfo && audioInfo.audioUrl) {
-                try {
-                    audioPlayer.src = audioInfo.audioUrl;
-                    currentVideoInfo.audioUrl = audioInfo.audioUrl;
-                    currentVideoInfo.artwork = audioInfo.thumbnailUrl;
-                    await audioPlayer.play();
-                } catch (error) {
-                    console.error('Error playing previous track:', error);
-                    updateDisplayInfo('Error al reproducir canción anterior');
-                }
-            } else {
-                updateDisplayInfo('No se pudo cargar canción anterior');
-            }
-        }
-
-        async function togglePlayPause() {
-            try {
-                if (audioPlayer.paused) {
-                    await audioPlayer.play();
-                } else {
-                    audioPlayer.pause();
-                }
-            } catch (error) {
-                console.error('Error toggling play/pause:', error);
-                updateDisplayInfo('Error al cambiar estado de reproducción');
-            }
-        }
-
-        function handlePlayingState() {
-            if (!audioPlayer || typeof audioPlayer.src !== 'string') return;
-
-            const videoId = currentVideoInfo.id;
-            const title = currentVideoInfo.title;
-            const currentTime = audioPlayer.currentTime;
-
-            // Es una canción nueva si el ID cambió O si el tiempo es casi 0 (empezó desde el principio)
-            const isNewSong = (videoId !== currentVideoInfo.id) || (currentTime < 1.5); // Margen de 1.5s
-
-            if (isNewSong) {
-                console.log("handlePlayingState: Detectada nueva canción o inicio.");
-                const artist = extractArtistFromTitle(title); // Extraer artista (¡adapta esta función!)
-                // Crear URL de artwork (mqdefault es calidad media)
-                const artworkUrl = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
-
-                // Actualizar información local
-                currentVideoInfo = { id: videoId, title: title, artist: artist, artwork: artworkUrl };
-                console.log("handlePlayingState: Nueva info:", currentVideoInfo);
-
-                // Notificar a la app Android con los datos de la NUEVA canción
-                if (isAndroidApp()) {
-                    Android.notifySongChanged(videoId, title, artist, artworkUrl);
-                    console.log("Llamado: Android.notifySongChanged() con datos nuevos.");
-                }
-
-                // Actualizar display HTML (si existe)
-                updateDisplayInfo("Reproduciendo");
-
-            } else {
-                 console.log("handlePlayingState: Reanudación de la misma canción detectada.");
-                 // Aquí solo llamamos a notifyPlaybackResumed (ya se hizo en onStateChange)
-                 // No necesitamos llamar a notifySongChanged de nuevo.
-                 updateDisplayInfo("Reproduciendo");
-            }
-        }
-
-        function extractArtistFromTitle(title) {
-            if (!title) return "Artista Desconocido";
-            const parts = title.split('-'); // Asume formato "Artista - Título"
-            if (parts.length > 1) {
-                return parts[0].trim();
-            }
-            const partsBy = title.split(' by '); // Asume formato "Título by Artista"
-             if (partsBy.length > 1) {
-                return partsBy[partsBy.length - 1].trim(); // Toma la última parte
-            }
-            // Fallback si no encuentra separador común
-            // Podrías intentar obtenerlo de videoData si la API lo proporcionara mejor,
-            // o idealmente, tenerlo desde tu backend.
-            // return videoData.author // Esto no suele funcionar bien para música
-            return "Artista Desconocido";
-        }
-
-        function updateDisplayInfo(status) {
+        function togglePlayPause() {
+            const thumbnailEl = document.getElementById('thumbnail');
             const statusEl = document.getElementById('status');
-            const videoIdEl = document.getElementById('videoId');
-            const titleEl = document.getElementById('title');
-            const artistEl = document.getElementById('artist');
 
-            if (statusEl) statusEl.textContent = status || 'N/A';
-            if (videoIdEl) videoIdEl.textContent = currentVideoInfo.id || 'N/A';
-            if (titleEl) titleEl.textContent = currentVideoInfo.title || 'N/A';
-            if (artistEl) artistEl.textContent = currentVideoInfo.artist || 'N/A';
-        }
-
-        function isAndroidApp() {
-            // `window.Android` es el nombre que le dimos en `addJavascriptInterface`
-            const hasInterface = typeof window.Android !== "undefined" && window.Android !== null;
-            if (!hasInterface) {
-                 console.log("Interfaz 'Android' no encontrada. Ejecutando en navegador normal?");
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                thumbnailEl.style.opacity = '1';
+                statusEl.textContent = 'Reproduciendo';
+            } else {
+                audioPlayer.pause();
+                thumbnailEl.style.opacity = '0.5';
+                statusEl.textContent = 'Pausado';
             }
-            return hasInterface;
         }
 
-        function stopPlaybackAndNotify() {
-             console.log("stopPlaybackAndNotify: Deteniendo reproductor y notificando a Android...");
-             if (audioPlayer && typeof audioPlayer.pause === 'function') {
-                audioPlayer.pause(); // Detiene el video actual
-             }
-             if (isAndroidApp()) {
-                Android.notifyPlaybackStopped();
-                 console.log("Llamado: Android.notifyPlaybackStopped()");
-             }
-             updateDisplayInfo("Detenido (DEBUG)");
-             currentVideoInfo = { id: null, title: null, artist: null, artwork: null, audioUrl: null }; // Limpiar info
+        function playNextTrack() {
+            // Placeholder para funcionalidad futura de playlist
+            alert('Función no implementada aún');
+        }
+
+        function playPreviousTrack() {
+            // Placeholder para funcionalidad futura de playlist
+            alert('Función no implementada aún');
         }
     </script>
 </body>
+</html>
