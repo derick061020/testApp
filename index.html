@@ -120,7 +120,7 @@
                     handlePlayingState(); // Lógica separada para claridad
                     // Notificar a Android que se está reproduciendo (para sincronizar botón pausa)
                     if (isAndroidApp()) {
-                        // Android.notifyPlaybackResumed();
+                        Android.notifyPlaybackResumed();
                         console.log("Llamado: Android.notifyPlaybackResumed()");
                     }
                     break;
@@ -129,7 +129,7 @@
                      console.log("Estado: PAUSED");
                     // Notificar a Android que se pausó (para sincronizar botón play)
                     if (isAndroidApp()) {
-                        // Android.notifyPlaybackPaused();
+                        Android.notifyPlaybackPaused();
                         console.log("Llamado: Android.notifyPlaybackPaused()");
                     }
                     break;
@@ -193,7 +193,7 @@
 
                 // Notificar a la app Android con los datos de la NUEVA canción
                 if (isAndroidApp()) {
-                    // Android.notifySongChanged(videoId, title, artist, artworkUrl);
+                    Android.notifySongChanged(videoId, title, artist, artworkUrl);
                     console.log("Llamado: Android.notifySongChanged() con datos nuevos.");
                 }
 
@@ -312,7 +312,7 @@
                 player.stopVideo(); // Detiene y resetea el video actual
              }
              if (isAndroidApp()) {
-                // Android.notifyPlaybackStopped();
+                Android.notifyPlaybackStopped();
                  console.log("Llamado: Android.notifyPlaybackStopped()");
              }
              updateDisplayInfo("Detenido (DEBUG)");
