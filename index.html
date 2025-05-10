@@ -215,10 +215,10 @@
         function isAndroidApp() {
             // `window.Android` es el nombre que le dimos en `addJavascriptInterface`
             const hasInterface = typeof window.Android !== "undefined" && window.Android !== null;
-            if (hasInterface) {
+            if (!hasInterface) {
                  console.log("Interfaz 'Android' no encontrada. Ejecutando en navegador normal?");
             }
-            return !hasInterface;
+            return hasInterface;
         }
 
         /** Extrae el artista del título (¡IMPLEMENTACIÓN MUY BÁSICA!). */
