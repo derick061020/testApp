@@ -17,36 +17,21 @@
             padding: 10px;
             margin-bottom: 10px;
         }
-        #video-player {
-            max-width: 100%;
-            margin-top: 15px;
-        }
-        #pip-button {
-            margin-top: 10px;
-            display: none;
-        }
     </style>
 </head>
 <body>
-    <h1>YouTube Video Player(Ex: https://youtu.be/dQw4w9WgXcQ)</h1>
+    <h1>YouTube Video Player</h1>
     <input type="text" id="youtube-url" placeholder="Pega aquí el enlace de YouTube">
     <button onclick="loadYouTubeVideo()">Reproducir</button>
 
     <div id="player-container">
         <img id="thumbnail" src="" style="max-width: 100%; display: none;">
-        <video id="video-player" controls playsinline style="display: none;"></video>
-        <button id="pip-button" onclick="enterPictureInPicture()">Picture-in-Picture</button>
     </div>
 
     <script>
-        let currentVideoPlayer = null;
-
         async function loadYouTubeVideo() {
             const youtubeUrlInput = document.getElementById('youtube-url');
             const videoUrl = youtubeUrlInput.value.trim();
-            const thumbnailEl = document.getElementById('thumbnail');
-            const videoPlayerEl = document.getElementById('video-player');
-            const pipButton = document.getElementById('pip-button');
 
             if (!videoUrl) {
                 alert('Por favor, ingresa un enlace de YouTube');
@@ -63,28 +48,17 @@
                 }
 
                 // Mostrar miniatura
+                const thumbnailEl = document.getElementById('thumbnail');
                 thumbnailEl.src = data.thumbnail_url;
                 thumbnailEl.style.display = 'block';
 
-                // Configurar y mostrar video
-                videoPlayerEl.src = data.audio_url;
-                videoPlayerEl.style.display = 'block';
-                
-                // Prevenir pausa automática
-                videoPlayerEl.addEventListener('pause', preventAutoPause);
-                
-                // Reproducir
-                await videoPlayerEl.play();
-
-                // Habilitar Picture-in-Picture si está soportado
-                if (document.pictureInPictureEnabled) {
-                    pipButton.style.display = 'block';
-                }
-
-                currentVideoPlayer = videoPlayerEl;
+                // Crear un nuevo Audio con la URL
+                const audioPlayer = new Audio(data.audio_url);
+                audioPlayer.play();
 
                 // Imprimir URLs en consola
-                console.log('Video URL:', data.audio_url);
+                console.log('Audio URL:', data.audio_url);
+                console.log('Video URL:', data.video_with_audio_url);
                 console.log('Thumbnail URL:', data.thumbnail_url);
 
             } catch (error) {
@@ -92,29 +66,6 @@
                 alert('No se pudo cargar el video. Verifica el enlace.');
             }
         }
-
-        function preventAutoPause() {
-            if (document.hidden && currentVideoPlayer) {
-                currentVideoPlayer.play();
-            }
-        }
-
-        async function enterPictureInPicture() {
-            if (currentVideoPlayer && document.pictureInPictureEnabled) {
-                try {
-                    await currentVideoPlayer.requestPictureInPicture();
-                } catch (error) {
-                    console.error('Error entering PiP:', error);
-                }
-            }
-        }
-
-        // Prevenir pausa global
-        document.addEventListener('visibilitychange', () => {
-            if (currentVideoPlayer && document.hidden) {
-                currentVideoPlayer.play();
-            }
-        });
     </script>
 </body>
 </html>
