@@ -1,5 +1,6 @@
 <head>
     <title>VibeTurn Web Player (Ejemplo)</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* Estilos básicos para demostración */
@@ -65,7 +66,18 @@
         // Función para obtener la URL de audio desde el backend
         async function fetchAudioUrl(videoUrl) {
             try {
-                const response = await fetch(`get_youtube_audio.php?url=${encodeURIComponent(videoUrl)}`);
+                const response = await fetch(`get_youtube_audio.php?url=${encodeURIComponent(videoUrl)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
                 
                 if (data.error) {
@@ -73,12 +85,18 @@
                     return null;
                 }
                 
+                // Validar que la URL de audio sea válida
+                if (!data.audio_url || !data.audio_url.startsWith('http')) {
+                    console.error('Invalid audio URL:', data.audio_url);
+                    return null;
+                }
+                
                 return {
                     audioUrl: data.audio_url,
-                    thumbnailUrl: data.thumbnail_url
+                    thumbnailUrl: data.thumbnail_url || ''
                 };
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error fetching audio URL:', error);
                 return null;
             }
         }
@@ -86,11 +104,26 @@
         // --- Inicialización del reproductor de audio ---
         async function initializeAudioPlayer() {
             const audioInfo = await fetchAudioUrl(initialVideoUrl);
-            if (audioInfo) {
-                audioPlayer.src = audioInfo.audioUrl;
-                currentVideoInfo.audioUrl = audioInfo.audioUrl;
-                currentVideoInfo.artwork = audioInfo.thumbnailUrl;
-                updateDisplayInfo('ready');
+            if (audioInfo && audioInfo.audioUrl) {
+                try {
+                    audioPlayer.src = audioInfo.audioUrl;
+                    currentVideoInfo.audioUrl = audioInfo.audioUrl;
+                    currentVideoInfo.artwork = audioInfo.thumbnailUrl;
+                    
+                    // Añadir listeners para manejar errores de carga de audio
+                    audioPlayer.addEventListener('error', (e) => {
+                        console.error('Audio error:', e);
+                        updateDisplayInfo('Error al cargar audio');
+                        playNextTrack(); // Intentar reproducir siguiente canción
+                    });
+
+                    updateDisplayInfo('ready');
+                } catch (error) {
+                    console.error('Error setting audio source:', error);
+                    updateDisplayInfo('Error al configurar audio');
+                }
+            } else {
+                updateDisplayInfo('No se pudo cargar audio');
             }
         }
 
@@ -120,11 +153,18 @@
             
             // Obtener la URL de audio del backend
             const audioInfo = await fetchAudioUrl(nextVideoUrl);
-            if (audioInfo) {
-                audioPlayer.src = audioInfo.audioUrl;
-                currentVideoInfo.audioUrl = audioInfo.audioUrl;
-                currentVideoInfo.artwork = audioInfo.thumbnailUrl;
-                audioPlayer.play();
+            if (audioInfo && audioInfo.audioUrl) {
+                try {
+                    audioPlayer.src = audioInfo.audioUrl;
+                    currentVideoInfo.audioUrl = audioInfo.audioUrl;
+                    currentVideoInfo.artwork = audioInfo.thumbnailUrl;
+                    await audioPlayer.play();
+                } catch (error) {
+                    console.error('Error playing next track:', error);
+                    updateDisplayInfo('Error al reproducir siguiente canción');
+                }
+            } else {
+                updateDisplayInfo('No se pudo cargar siguiente canción');
             }
         }
 
@@ -137,19 +177,31 @@
             
             // Obtener la URL de audio del backend
             const audioInfo = await fetchAudioUrl(previousVideoUrl);
-            if (audioInfo) {
-                audioPlayer.src = audioInfo.audioUrl;
-                currentVideoInfo.audioUrl = audioInfo.audioUrl;
-                currentVideoInfo.artwork = audioInfo.thumbnailUrl;
-                audioPlayer.play();
+            if (audioInfo && audioInfo.audioUrl) {
+                try {
+                    audioPlayer.src = audioInfo.audioUrl;
+                    currentVideoInfo.audioUrl = audioInfo.audioUrl;
+                    currentVideoInfo.artwork = audioInfo.thumbnailUrl;
+                    await audioPlayer.play();
+                } catch (error) {
+                    console.error('Error playing previous track:', error);
+                    updateDisplayInfo('Error al reproducir canción anterior');
+                }
+            } else {
+                updateDisplayInfo('No se pudo cargar canción anterior');
             }
         }
 
-        function togglePlayPause() {
-            if (audioPlayer.paused) {
-                audioPlayer.play();
-            } else {
-                audioPlayer.pause();
+        async function togglePlayPause() {
+            try {
+                if (audioPlayer.paused) {
+                    await audioPlayer.play();
+                } else {
+                    audioPlayer.pause();
+                }
+            } catch (error) {
+                console.error('Error toggling play/pause:', error);
+                updateDisplayInfo('Error al cambiar estado de reproducción');
             }
         }
 
