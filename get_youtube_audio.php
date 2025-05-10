@@ -8,8 +8,9 @@ function getYouTubeAudioUrl($videoUrl) {
     }
 
     // Use youtube-dl to extract audio URL
-    $command = "yt-dlp -f best[ext=mp4] --get-thumbnail --get-url" . escapeshellarg($videoUrl) . " 2>&1";
+    $command = escapeshellcmd("yt-dlp -f 'best[ext=mp4]' --get-thumbnail --get-url " . escapeshellarg($videoUrl) . " 2>&1");
     $output = shell_exec($command);
+    return (['command' => $command, 'output' => $output]);
 
     // Check for errors
     if ($output === null) {
