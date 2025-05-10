@@ -8,12 +8,12 @@ function getYouTubeAudioUrl($videoUrl) {
     }
 
     // Use youtube-dl to extract audio URL
-    $command = escapeshellcmd("youtube-dl -f bestaudio --get-url " . escapeshellarg($videoUrl) . " 2>&1");
+    $command = escapeshellcmd("yt-dlp -f bestaudio --get-url " . escapeshellarg($videoUrl) . " 2>&1");
     $output = shell_exec($command);
 
     // Check for errors
     if ($output === null) {
-        return ['error' => 'Failed to execute youtube-dl'];
+        return ['error' => $output];
     }
 
     // Trim and validate the output
