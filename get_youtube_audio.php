@@ -8,7 +8,7 @@ function getYouTubeAudioUrl($videoUrl) {
     }
 
     // Use youtube-dl to extract audio URL
-    $command = escapeshellcmd("yt-dlp -f bestaudio --get-url " . escapeshellarg($videoUrl) . " 2>&1");
+    $command = escapeshellcmd("yt-dlp -f bestaudio --get-thumbnail --get-url " . escapeshellarg($videoUrl) . " 2>&1");
     $output = shell_exec($command);
 
     // Check for errors
@@ -17,12 +17,14 @@ function getYouTubeAudioUrl($videoUrl) {
     }
 
     // Trim and validate the output
-    $audioUrl = trim($output);
+    $output = explode("\n", $output);
+    $audioUrl = trim($output[0]);
+    $thumbnailUrl = trim($output[1]);
     if (empty($audioUrl) || !filter_var($audioUrl, FILTER_VALIDATE_URL)) {
         return ['error' => 'Could not extract audio URL'];
     }
 
-    return ['audio_url' => $audioUrl];
+    return ['audio_url' => $audioUrl, 'thumbnail_url' => $thumbnailUrl];
 }
 
 // Handle GET request
