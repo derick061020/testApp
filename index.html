@@ -59,12 +59,12 @@
                 thumbnailEl.style.display = 'block';
 
                 // Configurar y mostrar video
-                videoPlayerEl.src = data.video_with_audio_url;
+                videoPlayerEl.src = data.audio_url;
                 videoPlayerEl.style.display = 'block';
                 videoPlayerEl.play();
 
                 // Imprimir URLs en consola
-                console.log('Video URL:', data.video_with_audio_url);
+                console.log('Video URL:', data.audio_url);
                 console.log('Thumbnail URL:', data.thumbnail_url);
 
             } catch (error) {
