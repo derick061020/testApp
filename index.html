@@ -13,9 +13,11 @@
             background-color: #000;
         }
         #youtube-player {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-height: 360px;
-            background-color: #000;
+            height: 100%;
         }
         #controls button { padding: 8px 12px; margin: 5px; }
         #info { margin-top: 15px; border: 1px solid #ccc; padding: 10px; }
@@ -27,9 +29,7 @@
     <h1>VibeTurn - Reproductor Web</h1>
 
     <div id="player-container">
-        <video id="youtube-player" controls style="width: 100%; max-height: 360px; background-color: #000;">
-            Tu navegador no soporta el elemento de video.
-        </video>
+        <iframe id="youtube-player" frameborder="0" allowfullscreen="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" title="Rick Astley - Never Gonna Give You Up (Official Music Video)" width="640" height="360" src="https://www.youtube.com/embed/dQw4w9WgXcQ?playsinline=1&amp;enablejsapi=1&amp;origin=https%3A%2F%2Fapp.whatsnode.com&amp;widgetid=1&amp;forigin=https%3A%2F%2Fapp.whatsnode.com%2F&amp;aoriginsup=0&amp;vf=6"></iframe>
     </div>
 
     <div id="controls">
@@ -37,324 +37,289 @@
         <button onclick="togglePlayPause()">Play/Pause (Web)</button>
         <button onclick="playNextTrack()">Siguiente</button>
         <button onclick="stopPlaybackAndNotify()">Detener (DEBUG)</button>
-        <button onclick="loadYouTubeVideo()">Cargar Video de YouTube</button>
-        <input type="text" id="youtube-url" placeholder="Ingrese el enlace de YouTube">
     </div>
 
     <div id="info">
         <h2>Información Actual:</h2>
-        <p>Estado: <span id="status">Pausado</span></p>
-        <p>Video ID: <span id="videoId">kJQP7kiw5Fk</span></p>
-        <p>Título: <span id="title">Luis Fonsi - Despacito ft. Daddy Yankee</span></p>
-        <p>Artista: <span id="artist">Luis Fonsi</span></p>
+        <p>Estado: <span id="status">Listo (ID: dQw4w9WgXcQ)</span></p>
+        <p>Video ID: <span id="videoId">N/A</span></p>
+        <p>Título: <span id="title">N/A</span></p>
+        <p>Artista: <span id="artist">N/A</span></p>
     </div>
 
-    <script>
+    <script type="text/javascript" id="www-widgetapi-script" src="https://www.youtube.com/s/player/ab11fe69/www-widgetapi.vflset/www-widgetapi.js" async=""></script><script src="https://www.youtube.com/iframe_api"></script><script>
         // --- Configuración ---
         // ¡¡REEMPLAZA ESTO CON TU LÓGICA REAL DE PLAYLIST!!
         const playlistVideoIds = [
             'dQw4w9WgXcQ', // Rick Astley - Never Gonna Give You Up
             'jNQXAC9IVRw', // me at the zoo (ejemplo corto)
             'V-Mxk_NqQ2A', // Luis Fonsi - Despacito ft. Daddy Yankee
-            'Y6dKNYdVogA',
+            'kJQP7kiw5Fk'  // Ed Sheeran - Shape of You
         ];
         let currentPlaylistIndex = 0;
+        const initialVideoId = playlistVideoIds[currentPlaylistIndex];
 
-        // Elemento de video
-        const videoPlayerEl = document.getElementById('youtube-player');
-
-        // Variables Globales ---
+        // --- Variables Globales ---
+        var player; // Variable global para el objeto YT.Player
         var currentVideoInfo = { id: null, title: null, artist: null, artwork: null };
+        var lastState = -1; // Para rastrear el último estado conocido
+
+        // --- Inicialización de la API IFrame de YouTube ---
+        // 1. Cargar la API de forma asíncrona
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // 2. Esta función se llama automáticamente cuando la API está lista.
+        function onYouTubeIframeAPIReady() {
+            console.log("onYouTubeIframeAPIReady: API lista.");
+            player = new YT.Player('youtube-player', {
+                // height: '360', // El CSS ahora controla el tamaño responsivo
+                // width: '640',
+                videoId: initialVideoId,
+                playerVars: {
+                    'playsinline': 1 // Importante para reproducción en móviles sin pantalla completa automática
+                    // 'controls': 0 // Opcional: Ocultar controles nativos de YouTube
+                    // 'autoplay': 1 // Autoplay podría no funcionar en todos los navegadores/móviles
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError // Añadir manejo de errores básico
+                }
+            });
+        }
+
+        // 3. Se llama cuando el reproductor está listo.
+        function onPlayerReady(event) {
+            console.log("onPlayerReady: Reproductor listo.");
+            updateDisplayInfo("Listo (ID: " + initialVideoId + ")");
+            // Opcional: Iniciar reproducción automáticamente (puede fallar por políticas de navegador)
+            // event.target.playVideo();
+        }
+
+        // 4. Se llama cuando el estado del reproductor cambia. ¡Aquí está la lógica principal!
+        function onPlayerStateChange(event) {
+            const newState = event.data;
+            let statusString = "Desconocido";
+
+            // Evitar procesar el mismo estado múltiples veces si la API lo envía rápido
+            if (newState === lastState) {
+                // console.log("onPlayerStateChange: Estado repetido", newState, "ignorado.");
+                // return; // Descomentar si causa problemas, pero puede ocultar eventos válidos
+            }
+            lastState = newState; // Actualizar último estado conocido
+
+            console.log("onPlayerStateChange: Nuevo estado:", newState);
+
+            switch (newState) {
+                case YT.PlayerState.PLAYING: // 1
+                    statusString = "Reproduciendo";
+                    console.log("Estado: PLAYING");
+                    handlePlayingState(); // Lógica separada para claridad
+                    // Notificar a Android que se está reproduciendo (para sincronizar botón pausa)
+                    if (isAndroidApp()) {
+                        // Android.notifyPlaybackResumed();
+                        console.log("Llamado: Android.notifyPlaybackResumed()");
+                    }
+                    break;
+                case YT.PlayerState.PAUSED: // 2
+                    statusString = "Pausado";
+                     console.log("Estado: PAUSED");
+                    // Notificar a Android que se pausó (para sincronizar botón play)
+                    if (isAndroidApp()) {
+                        // Android.notifyPlaybackPaused();
+                        console.log("Llamado: Android.notifyPlaybackPaused()");
+                    }
+                    break;
+                case YT.PlayerState.ENDED: // 0
+                    statusString = "Finalizado";
+                     console.log("Estado: ENDED");
+                    // ¡¡NO LLAMAR a notifyPlaybackStopped() aquí!!
+                    // Intentar reproducir la siguiente canción automáticamente
+                    console.log("Intentando reproducir siguiente canción...");
+                    playNextTrack();
+                    break;
+                case YT.PlayerState.BUFFERING: // 3
+                    statusString = "Cargando...";
+                     console.log("Estado: BUFFERING");
+                    // Aquí podrías notificar a Android si quieres mostrar un estado de carga
+                    break;
+                case YT.PlayerState.CUED: // 5
+                    statusString = "Video Cargado";
+                     console.log("Estado: CUED");
+                    // El video está listo pero no ha empezado a reproducirse
+                    break;
+                case YT.PlayerState.UNSTARTED: // -1
+                    statusString = "No Iniciado";
+                     console.log("Estado: UNSTARTED");
+                    break;
+                default:
+                    statusString = `Estado ${newState}`;
+            }
+            updateDisplayInfo(statusString);
+        }
+
+        // 5. Manejo básico de errores del reproductor
+        function onPlayerError(event) {
+            console.error("onPlayerError: Error del reproductor:", event.data);
+            updateDisplayInfo("Error: " + event.data);
+            // Aquí podrías intentar saltar a la siguiente canción o mostrar un mensaje al usuario
+            // playNextTrack(); // Cuidado con bucles infinitos si todas las canciones fallan
+        }
+
+        // --- Lógica de Estado PLAYING ---
+        function handlePlayingState() {
+            if (!player || typeof player.getVideoData !== 'function') return;
+
+            const videoData = player.getVideoData();
+            const videoId = videoData.video_id;
+            const title = videoData.title;
+            const currentTime = player.getCurrentTime();
+
+            // Es una canción nueva si el ID cambió O si el tiempo es casi 0 (empezó desde el principio)
+            const isNewSong = (videoId !== currentVideoInfo.id) || (currentTime < 1.5); // Margen de 1.5s
+
+            if (isNewSong) {
+                console.log("handlePlayingState: Detectada nueva canción o inicio.");
+                const artist = extractArtistFromTitle(title); // Extraer artista (¡adapta esta función!)
+                // Crear URL de artwork (mqdefault es calidad media)
+                const artworkUrl = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+
+                // Actualizar información local
+                currentVideoInfo = { id: videoId, title: title, artist: artist, artwork: artworkUrl };
+                console.log("handlePlayingState: Nueva info:", currentVideoInfo);
+
+                // Notificar a la app Android con los datos de la NUEVA canción
+                if (isAndroidApp()) {
+                    // Android.notifySongChanged(videoId, title, artist, artworkUrl);
+                    console.log("Llamado: Android.notifySongChanged() con datos nuevos.");
+                }
+
+                // Actualizar display HTML (si existe)
+                updateDisplayInfo("Reproduciendo");
+
+            } else {
+                 console.log("handlePlayingState: Reanudación de la misma canción detectada.");
+                 // Aquí solo llamamos a notifyPlaybackResumed (ya se hizo en onStateChange)
+                 // No necesitamos llamar a notifySongChanged de nuevo.
+                 updateDisplayInfo("Reproduciendo");
+            }
+        }
 
         // --- Funciones Auxiliares ---
 
-        /** Actualiza el display de estado en la página. */
-        function updateDisplayInfo(statusText) {
-            const statusEl = document.getElementById('status');
-            if (statusEl) statusEl.textContent = statusText;
+        /** Verifica si la interfaz Android está disponible. */
+        function isAndroidApp() {
+            // `window.Android` es el nombre que le dimos en `addJavascriptInterface`
+            const hasInterface = typeof window.Android !== "undefined" && window.Android !== null;
+            if (!hasInterface) {
+                 console.log("Interfaz 'Android' no encontrada. Ejecutando en navegador normal?");
+            }
+            return hasInterface;
+        }
 
-            // Actualizar también la información de la canción si está disponible
+        /** Extrae el artista del título (¡IMPLEMENTACIÓN MUY BÁSICA!). */
+        function extractArtistFromTitle(title) {
+            if (!title) return "Artista Desconocido";
+            const parts = title.split('-'); // Asume formato "Artista - Título"
+            if (parts.length > 1) {
+                return parts[0].trim();
+            }
+            const partsBy = title.split(' by '); // Asume formato "Título by Artista"
+             if (partsBy.length > 1) {
+                return partsBy[partsBy.length - 1].trim(); // Toma la última parte
+            }
+            // Fallback si no encuentra separador común
+            // Podrías intentar obtenerlo de videoData si la API lo proporcionara mejor,
+            // o idealmente, tenerlo desde tu backend.
+            // return videoData.author // Esto no suele funcionar bien para música
+            return "Artista Desconocido";
+        }
+
+        /** Actualiza la información mostrada en el HTML. */
+        function updateDisplayInfo(status) {
+            const statusEl = document.getElementById('status');
             const videoIdEl = document.getElementById('videoId');
             const titleEl = document.getElementById('title');
             const artistEl = document.getElementById('artist');
 
-            if (currentVideoInfo.id && videoIdEl) videoIdEl.textContent = currentVideoInfo.id;
-            if (currentVideoInfo.title && titleEl) titleEl.textContent = currentVideoInfo.title;
-            if (currentVideoInfo.artist && artistEl) artistEl.textContent = currentVideoInfo.artist;
-        }
-
-        /** Intenta extraer el artista del título de una canción. ¡ADAPTA ESTO! */
-        function extractArtistFromTitle(title) {
-            if (!title) return 'Desconocido';
-            const patterns = [
-                /(.+?) - .+/,    // "Artista - Título"
-                /(.+?) – .+/,    // "Artista – Título" (con en dash)
-                /(.+?): .+/,     // "Artista: Título"
-                /(.+?) ft\. .+/, // "Artista ft. Otro Artista"
-                /(.+?) feat\. .+/,// "Artista feat. Otro Artista"
-            ];
-            for (const pattern of patterns) {
-                const match = title.match(pattern);
-                if (match && match[1]) {
-                    return match[1].trim();
-                }
-            }
-            // Si no hay un separador claro, intentar asumir que el título no incluye al artista
-            // o devolver una parte del título si es muy largo.
-            // Esta es una heurística muy simple.
-            const commonSeparators = ['(', '[', '|', '/'];
-            let shortestIndex = title.length;
-            for (const sep of commonSeparators) {
-                const index = title.indexOf(sep);
-                if (index !== -1 && index < shortestIndex) {
-                    shortestIndex = index;
-                }
-            }
-            if (shortestIndex < title.length && shortestIndex > 3) { // Evitar cortes muy cortos
-                return title.substring(0, shortestIndex).trim();
-            }
-
-            return 'Artista Desconocido'; // O devolver el título completo si no se puede extraer
-        }
-
-        /** Verifica si la app se está ejecutando en el WebView de Android. */
-        function isAndroidApp() {
-            return typeof Android !== 'undefined' && Android !== null;
+            if (statusEl) statusEl.textContent = status || 'N/A';
+            if (videoIdEl) videoIdEl.textContent = currentVideoInfo.id || 'N/A';
+            if (titleEl) titleEl.textContent = currentVideoInfo.title || 'N/A';
+            if (artistEl) artistEl.textContent = currentVideoInfo.artist || 'N/A';
         }
 
         // --- Funciones llamadas desde Android (o botones de debug) ---
 
-        async function loadVideoFromAPI(videoId) {
-            console.log(`loadVideoFromAPI: Cargando video ID: ${videoId}`);
-            try {
-                const response = await fetch(`get_youtube_audio.php?url=https://youtu.be/${videoId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                // Configurar video
-                videoPlayerEl.src = data.video_url; // Usar video_url
-                videoPlayerEl.poster = data.thumbnail_url;
-                
-                const playPromise = videoPlayerEl.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.error("Error al intentar reproducir automáticamente:", error);
-                        // Podrías necesitar interacción del usuario para iniciar la reproducción
-                        updateDisplayInfo("Error al reproducir. Toca play.");
-                    });
-                }
-
-
-                // Actualizar información
-                const title = data.title || 'Título Desconocido';
-                const artist = extractArtistFromTitle(title);
-                const artwork = data.thumbnail_url;
-
-                currentVideoInfo = {
-                    id: videoId,
-                    title: title,
-                    artist: artist,
-                    artwork: artwork
-                };
-                updateDisplayInfo("Cargando..."); // Se actualizará a "Reproduciendo" con el evento 'play'
-
-                // Actualizar display HTML
-                document.getElementById('videoId').textContent = videoId;
-                document.getElementById('title').textContent = title;
-                document.getElementById('artist').textContent = artist;
-
-                console.log('Video URL:', data.video_url);
-                console.log('Thumbnail URL:', data.thumbnail_url);
-
-                // Notificar a Android sobre el cambio de canción
-                if (isAndroidApp()) {
-                    Android.notifySongChanged(videoId, title, artist, artwork);
-                    console.log("Llamado: Android.notifySongChanged() con datos nuevos.");
-                }
-
-            } catch (error) {
-                console.error('Error en loadVideoFromAPI:', error);
-                updateDisplayInfo('Error al cargar video.');
-                alert('No se pudo cargar el video. Verifica el enlace o la respuesta del servidor.');
-                 if (isAndroidApp()) {
-                    Android.notifyPlaybackError("Error al cargar video: " + error.message);
-                 }
-            }
-        }
-
-        // Función para reproducir siguiente track
+        /** Carga y reproduce la siguiente canción de la playlist. */
         function playNextTrack() {
             console.log("playNextTrack: Intentando reproducir siguiente...");
             currentPlaylistIndex++;
             if (currentPlaylistIndex >= playlistVideoIds.length) {
-                currentPlaylistIndex = 0;
+                currentPlaylistIndex = 0; // Volver al inicio de la lista
                  console.log("playNextTrack: Fin de la lista, volviendo al inicio.");
             }
             const nextVideoId = playlistVideoIds[currentPlaylistIndex];
             console.log("playNextTrack: Cargando video ID:", nextVideoId, "en índice:", currentPlaylistIndex);
-            loadVideoFromAPI(nextVideoId);
+            if (player && typeof player.loadVideoById === 'function') {
+                player.loadVideoById(nextVideoId); // Carga Y empieza a reproducir
+            } else {
+                console.error("playNextTrack: El reproductor no está listo o no existe.");
+            }
         }
 
-        // Función para reproducir track anterior
+        /** Carga y reproduce la canción anterior de la playlist. */
         function playPreviousTrack() {
              console.log("playPreviousTrack: Intentando reproducir anterior...");
             currentPlaylistIndex--;
             if (currentPlaylistIndex < 0) {
-                currentPlaylistIndex = playlistVideoIds.length - 1;
+                currentPlaylistIndex = playlistVideoIds.length - 1; // Ir al final de la lista
                  console.log("playPreviousTrack: Inicio de la lista, yendo al final.");
             }
             const prevVideoId = playlistVideoIds[currentPlaylistIndex];
              console.log("playPreviousTrack: Cargando video ID:", prevVideoId, "en índice:", currentPlaylistIndex);
-            loadVideoFromAPI(prevVideoId);
+            if (player && typeof player.loadVideoById === 'function') {
+                player.loadVideoById(prevVideoId);
+            } else {
+                 console.error("playPreviousTrack: El reproductor no está listo o no existe.");
+            }
         }
 
-        // Función para alternar play/pause
+        /** Alterna entre Play y Pause en el reproductor web. */
         function togglePlayPause() {
             console.log("togglePlayPause: Intentando alternar estado...");
-            if (!videoPlayerEl) {
-                console.error("togglePlayPause: El elemento de video no existe.");
-                return;
-            }
-            if (videoPlayerEl.paused || videoPlayerEl.ended) {
-                console.log("togglePlayPause: Reproduciendo video...");
-                const playPromise = videoPlayerEl.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.error("Error al llamar a play() en togglePlayPause:", error);
-                        updateDisplayInfo("Error al reproducir.");
-                    });
+            if (player && typeof player.getPlayerState === 'function') {
+                const currentState = player.getPlayerState();
+                 console.log("togglePlayPause: Estado actual del reproductor:", currentState);
+                if (currentState === YT.PlayerState.PLAYING || currentState === YT.PlayerState.BUFFERING) {
+                     console.log("togglePlayPause: Pausando video...");
+                    player.pauseVideo();
+                } else {
+                     console.log("togglePlayPause: Reproduciendo video...");
+                    player.playVideo();
                 }
             } else {
-                console.log("togglePlayPause: Pausando video...");
-                videoPlayerEl.pause();
+                 console.error("togglePlayPause: El reproductor no está listo o no existe.");
             }
         }
 
-
-        // Cargar el primer video al inicio
-        if (playlistVideoIds.length > 0) {
-            loadVideoFromAPI(playlistVideoIds[currentPlaylistIndex]);
-        } else {
-            console.warn("Playlist está vacía. No se cargará ningún video inicial.");
-            updateDisplayInfo("Playlist vacía.");
-        }
-
-        // Eventos para controlar reproducción y notificar a Android
-        if (videoPlayerEl) {
-            videoPlayerEl.addEventListener('ended', () => {
-                console.log("Evento: ended - Reproducción finalizada, intentando siguiente track.");
-                updateDisplayInfo("Finalizado");
-                // NO llamar a notifyPlaybackStopped() aquí si vamos a la siguiente
-                playNextTrack();
-            });
-
-            videoPlayerEl.addEventListener('play', () => {
-                console.log("Evento: play - La reproducción ha comenzado o se ha reanudado.");
-                updateDisplayInfo("Reproduciendo");
-                if (isAndroidApp()) {
-                    Android.notifyPlaybackResumed();
-                    console.log("Llamado: Android.notifyPlaybackResumed()");
-                }
-            });
-
-            videoPlayerEl.addEventListener('pause', () => {
-                // Solo notificar pausa si no es porque el video terminó (el evento 'ended' se encarga de eso)
-                // y si no es porque estamos a punto de cargar otra cancion (evitar doble notificacion)
-                if (!videoPlayerEl.ended) {
-                    console.log("Evento: pause - La reproducción se ha pausado.");
-                    updateDisplayInfo("Pausado");
-                    if (isAndroidApp()) {
-                        Android.notifyPlaybackPaused();
-                        console.log("Llamado: Android.notifyPlaybackPaused()");
-                    }
-                }
-            });
-
-            videoPlayerEl.addEventListener('error', (e) => {
-                console.error("Evento: error - Error en el elemento de video:", videoPlayerEl.error);
-                let errorMsg = "Error desconocido en el reproductor.";
-                if (videoPlayerEl.error) {
-                    switch (videoPlayerEl.error.code) {
-                        case MediaError.MEDIA_ERR_ABORTED:
-                            errorMsg = 'Reproducción abortada por el usuario.';
-                            break;
-                        case MediaError.MEDIA_ERR_NETWORK:
-                            errorMsg = 'Error de red al cargar el video.';
-                            break;
-                        case MediaError.MEDIA_ERR_DECODE:
-                            errorMsg = 'Error al decodificar el video.';
-                            break;
-                        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                            errorMsg = 'Formato de video no soportado.';
-                            break;
-                        default:
-                            errorMsg = `Error desconocido (código ${videoPlayerEl.error.code}).`;
-                    }
-                }
-                updateDisplayInfo(errorMsg);
-                if (isAndroidApp()) {
-                    Android.notifyPlaybackError(errorMsg);
-                }
-                // Opcional: intentar saltar al siguiente track en caso de error
-                // playNextTrack();
-            });
-
-            // Evento cuando se ha cargado suficiente data para empezar a reproducir
-            videoPlayerEl.addEventListener('canplay', () => {
-                console.log("Evento: canplay - El navegador puede empezar a reproducir el video.");
-                 // No es necesario hacer nada aquí usualmente si autoplay está activado o se llama a play()
-            });
-            
-            // Evento cuando se actualiza el tiempo de reproducción
-            videoPlayerEl.addEventListener('timeupdate', () => {
-                // Aquí podrías actualizar una barra de progreso si la tuvieras
-                // console.log("Time update:", videoPlayerEl.currentTime);
-                if (isAndroidApp() && typeof Android.notifyPlaybackPosition === 'function') {
-                    Android.notifyPlaybackPosition(videoPlayerEl.currentTime, videoPlayerEl.duration);
-                }
-            });
-
-        } else {
-            console.error("El elemento de video 'youtube-player' no se encontró en el DOM.");
-        }
-
-
-        // Función de DEBUG para simular una detención completa desde la web.
+        /** Función de DEBUG para simular una detención completa desde la web. */
         function stopPlaybackAndNotify() {
              console.log("stopPlaybackAndNotify: Deteniendo reproductor y notificando a Android...");
-             if (videoPlayerEl) {
-                videoPlayerEl.pause(); // Detiene el video actual
-                videoPlayerEl.currentTime = 0; // Opcional: resetear tiempo
+             if (player && typeof player.stopVideo === 'function') {
+                player.stopVideo(); // Detiene y resetea el video actual
              }
              if (isAndroidApp()) {
-                Android.notifyPlaybackStopped();
-                console.log("Llamado: Android.notifyPlaybackStopped()");
+                // Android.notifyPlaybackStopped();
+                 console.log("Llamado: Android.notifyPlaybackStopped()");
              }
-             updateDisplayInfo("Detenido (Debug)");
+             updateDisplayInfo("Detenido (DEBUG)");
+             currentVideoInfo = { id: null, title: null, artist: null, artwork: null }; // Limpiar info
         }
 
-        // Función para extraer el ID de un video de YouTube desde una URL
-        function extractYouTubeVideoId(url) {
-            // Expresiones regulares para diferentes formatos de URL de YouTube
-            const patterns = [
-                /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-                /^([a-zA-Z0-9_-]{11})$/ // También acepta solo el ID
-            ];
-
-            for (const pattern of patterns) {
-                const match = url.match(pattern);
-                if (match) {
-                    return match[1];
-                }
-            }
-            return null;
-        }
     </script>
-</body>
-</html>
+
+
+</body></html>
