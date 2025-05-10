@@ -17,6 +17,10 @@
             padding: 10px;
             margin-bottom: 10px;
         }
+        #video-player {
+            max-width: 100%;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -26,12 +30,15 @@
 
     <div id="player-container">
         <img id="thumbnail" src="" style="max-width: 100%; display: none;">
+        <video id="video-player" controls style="display: none;"></video>
     </div>
 
     <script>
         async function loadYouTubeVideo() {
             const youtubeUrlInput = document.getElementById('youtube-url');
             const videoUrl = youtubeUrlInput.value.trim();
+            const thumbnailEl = document.getElementById('thumbnail');
+            const videoPlayerEl = document.getElementById('video-player');
 
             if (!videoUrl) {
                 alert('Por favor, ingresa un enlace de YouTube');
@@ -48,16 +55,15 @@
                 }
 
                 // Mostrar miniatura
-                const thumbnailEl = document.getElementById('thumbnail');
                 thumbnailEl.src = data.thumbnail_url;
                 thumbnailEl.style.display = 'block';
 
-                // Crear un nuevo Audio con la URL
-                const audioPlayer = new Audio(data.audio_url);
-                audioPlayer.play();
+                // Configurar y mostrar video
+                videoPlayerEl.src = data.video_with_audio_url;
+                videoPlayerEl.style.display = 'block';
+                videoPlayerEl.play();
 
                 // Imprimir URLs en consola
-                console.log('Audio URL:', data.audio_url);
                 console.log('Video URL:', data.video_with_audio_url);
                 console.log('Thumbnail URL:', data.thumbnail_url);
 
