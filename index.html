@@ -41,7 +41,7 @@
             try {
                 const response = await fetch(`get_youtube_audio.php?url=${encodeURIComponent(videoUrl)}`);
                 const data = await response.json();
-                console.log(data);
+                console.log(youtubeUrlInput.value);
 
                 if (data.error) {
                     throw new Error(data.error);
