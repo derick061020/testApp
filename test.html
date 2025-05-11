@@ -278,19 +278,7 @@
              updateDisplayInfo("Detenido (DEBUG)");
              currentVideoInfo = { id: null, title: null, artist: null, artwork: null }; // Limpiar info
         }
-        document.addEventListener("DOMContentLoaded", function(event) {
-      /* 
-        - Code to execute when only the HTML document is loaded.
-        - This doesn't wait for stylesheets, 
-          images, and subframes to finish loading. 
-      */
-         var player = document.getElementById('youtube-player');
-         console.log("onYouTubeIframeAPIReady: API lista.");
-         player.setAttribute('src', initialVideoId);
-
-         console.log("onPlayerReady: Reproductor listo.");
-         updateDisplayInfo("Listo (ID: " + initialVideoId + ")");
-         function togglePlayPause() {
+        function togglePlayPause() {
             console.log("togglePlayPause: Intentando alternar estado...");
             if (player.paused !== true) {
                 console.log("togglePlayPause: Pausando video...");
@@ -300,6 +288,20 @@
                 player.play();
             }
         }
+        document.addEventListener("DOMContentLoaded", function(event) {
+      /* 
+        - Code to execute when only the HTML document is loaded.
+        - This doesn't wait for stylesheets, 
+          images, and subframes to finish loading. 
+      */
+         const player = document.getElementById('youtube-player');
+         console.log("onYouTubeIframeAPIReady: API lista.");
+         player.setAttribute('src', initialVideoId);
+
+         console.log("onPlayerReady: Reproductor listo.");
+         updateDisplayInfo("Listo (ID: " + initialVideoId + ")");
+         
+        
         });
         
 
