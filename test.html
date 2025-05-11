@@ -31,7 +31,7 @@
     <h1>VibeTurn - Reproductor Web</h1>
 
     <div id="player-container">
-        <div id="youtube-player"></div>
+        <video id="youtube-player"></video>
     </div>
 
     <div id="controls">
@@ -121,7 +121,7 @@
                     console.log("Estado: PLAYING");
                     handlePlayingState(); // Lógica separada para claridad
                     // Notificar a Android que se está reproduciendo (para sincronizar botón pausa)
-                    if (isAndroidApp()) {
+                    if (!isAndroidApp()) {
                         Android.notifyPlaybackResumed();
                         console.log("Llamado: Android.notifyPlaybackResumed()");
                     }
@@ -130,7 +130,7 @@
                     statusString = "Pausado";
                      console.log("Estado: PAUSED");
                     // Notificar a Android que se pausó (para sincronizar botón play)
-                    if (isAndroidApp()) {
+                    if (!isAndroidApp()) {
                         Android.notifyPlaybackPaused();
                         console.log("Llamado: Android.notifyPlaybackPaused()");
                     }
@@ -194,7 +194,7 @@
                 console.log("handlePlayingState: Nueva info:", currentVideoInfo);
 
                 // Notificar a la app Android con los datos de la NUEVA canción
-                if (isAndroidApp()) {
+                if (!isAndroidApp()) {
                     Android.notifySongChanged(videoId, title, artist, artworkUrl);
                     console.log("Llamado: Android.notifySongChanged() con datos nuevos.");
                 }
@@ -313,7 +313,7 @@
              if (player && typeof player.stopVideo === 'function') {
                 player.stopVideo(); // Detiene y resetea el video actual
              }
-             if (isAndroidApp()) {
+             if (!isAndroidApp()) {
                 Android.notifyPlaybackStopped();
                  console.log("Llamado: Android.notifyPlaybackStopped()");
              }
