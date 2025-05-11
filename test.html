@@ -229,6 +229,7 @@
             console.log("playNextTrack: Cargando video ID:", nextVideoId, "en índice:", currentPlaylistIndex);
             if (player && typeof player.loadVideoById === 'function') {
                 player.loadVideoById(nextVideoId); // Carga Y empieza a reproducir
+                handlePlayingState();
             } else {
                 console.error("playNextTrack: El reproductor no está listo o no existe.");
             }
@@ -246,6 +247,7 @@
              console.log("playPreviousTrack: Cargando video ID:", prevVideoId, "en índice:", currentPlaylistIndex);
             if (player && typeof player.loadVideoById === 'function') {
                 player.loadVideoById(prevVideoId);
+                handlePlayingState();
             } else {
                  console.error("playPreviousTrack: El reproductor no está listo o no existe.");
             }
