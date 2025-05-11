@@ -102,7 +102,22 @@
         }
 
         // 4. Se llama cuando el estado del reproductor cambia. ¡Aquí está la lógica principal!
-        function onPlayerStateChange(event) {}
+        function onPlayerStateChange(event) {
+            const newState = event.data;
+            let statusString = "Desconocido";
+
+            // Evitar procesar el mismo estado múltiples veces si la API lo envía rápido
+            if (newState === lastState) {
+                // console.log("onPlayerStateChange: Estado repetido", newState, "ignorado.");
+                // return; // Descomentar si causa problemas, pero puede ocultar eventos válidos
+            }
+            lastState = newState; // Actualizar último estado conocido
+
+            console.log("onPlayerStateChange: Nuevo estado:", newState);
+
+            updateDisplayInfo(statusString);
+        }
+
         // 5. Manejo básico de errores del reproductor
         function onPlayerError(event) {
             console.error("onPlayerError: Error del reproductor:", event.data);
