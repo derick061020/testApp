@@ -117,48 +117,20 @@
 
             switch (newState) {
                 case YT.PlayerState.PLAYING: // 1
-                    statusString = "Reproduciendo";
-                    console.log("Estado: PLAYING");
-                    handlePlayingState(); // Lógica separada para claridad
-                    // Notificar a Android que se está reproduciendo (para sincronizar botón pausa)
+                    
                     if (isAndroidApp()) {
                         Android.notifyPlaybackResumed();
                         console.log("Llamado: Android.notifyPlaybackResumed()");
                     }
                     break;
                 case YT.PlayerState.PAUSED: // 2
-                    statusString = "Pausado";
-                     console.log("Estado: PAUSED");
-                    // Notificar a Android que se pausó (para sincronizar botón play)
+                   
                     if (isAndroidApp()) {
                         Android.notifyPlaybackPaused();
                         console.log("Llamado: Android.notifyPlaybackPaused()");
                     }
                     break;
-                case YT.PlayerState.ENDED: // 0
-                    statusString = "Finalizado";
-                     console.log("Estado: ENDED");
-                    // ¡¡NO LLAMAR a notifyPlaybackStopped() aquí!!
-                    // Intentar reproducir la siguiente canción automáticamente
-                    console.log("Intentando reproducir siguiente canción...");
-                    playNextTrack();
-                    break;
-                case YT.PlayerState.BUFFERING: // 3
-                    statusString = "Cargando...";
-                     console.log("Estado: BUFFERING");
-                    // Aquí podrías notificar a Android si quieres mostrar un estado de carga
-                    break;
-                case YT.PlayerState.CUED: // 5
-                    statusString = "Video Cargado";
-                     console.log("Estado: CUED");
-                    // El video está listo pero no ha empezado a reproducirse
-                    break;
-                case YT.PlayerState.UNSTARTED: // -1
-                    statusString = "No Iniciado";
-                     console.log("Estado: UNSTARTED");
-                    break;
-                default:
-                    statusString = `Estado ${newState}`;
+               
             }
             updateDisplayInfo(statusString);
         }
