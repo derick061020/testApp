@@ -306,6 +306,7 @@
 
          console.log("onPlayerReady: Reproductor listo.");
          updateDisplayInfo("Listo (ID: " + initialVideoId + ")");
+         handlePlayingState();
          if (isAndroidApp()) {
             Android.notifyPlaybackResumed();
             console.log("Llamado: Android.notifyPlaybackResumed()");
