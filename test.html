@@ -87,7 +87,8 @@
                 },
                 events: {
                     'onReady': onPlayerReady,
-   
+                    'onStateChange': onPlayerStateChange,
+                    //'onError': onPlayerError // Añadir manejo de errores básico
                 }
             });
         }
@@ -101,6 +102,206 @@
         }
 
         // 4. Se llama cuando el estado del reproductor cambia. ¡Aquí está la lógica principal!
+        function onPlayerStateChange(event) {
+            const newState = event.data;
+            let statusString = "Desconocido";
+
+            // Evitar procesar el mismo estado múltiples veces si la API lo envía rápido
+            if (newState === lastState) {
+                // console.log("onPlayerStateChange: Estado repetido", newState, "ignorado.");
+                // return; // Descomentar si causa problemas, pero puede ocultar eventos válidos
+            }
+            lastState = newState; // Actualizar último estado conocido
+
+            console.log("onPlayerStateChange: Nuevo estado:", newState);
+
+            switch (newState) {
+                case YT.PlayerState.PLAYING: // 1
+                    statusString = "Reproduciendo";
+                    console.log("Estado: PLAYING");
+                    handlePlayingState(); // Lógica separada para claridad
+                    // Notificar a Android que se está reproduciendo (para sincronizar botón pausa)
+                    if (isAndroidApp()) {
+                        Android.notifyPlaybackResumed();
+                        console.log("Llamado: Android.notifyPlaybackResumed()");
+                    }
+                    break;
+                case YT.PlayerState.PAUSED: // 2
+                    statusString = "Pausado";
+                     console.log("Estado: PAUSED");
+                    // Notificar a Android que se pausó (para sincronizar botón play)
+                    if (isAndroidApp()) {
+                        Android.notifyPlaybackPaused();
+                        console.log("Llamado: Android.notifyPlaybackPaused()");
+                    }
+                    break;
+                case YT.PlayerState.ENDED: // 0
+                    statusString = "Finalizado";
+                     console.log("Estado: ENDED");
+                    // ¡¡NO LLAMAR a notifyPlaybackStopped() aquí!!
+                    // Intentar reproducir la siguiente canción automáticamente
+                    console.log("Intentando reproducir siguiente canción...");
+                    playNextTrack();
+                    break;
+                case YT.PlayerState.BUFFERING: // 3
+                    statusString = "Cargando...";
+                     console.log("Estado: BUFFERING");
+                    // Aquí podrías notificar a Android si quieres mostrar un estado de carga
+                    break;
+                case YT.PlayerState.CUED: // 5
+                    statusString = "Video Cargado";
+                     console.log("Estado: CUED");
+                    // El video está listo pero no ha empezado a reproducirse
+                    break;
+                case YT.PlayerState.UNSTARTED: // -1
+                    statusString = "No Iniciado";
+                     console.log("Estado: UNSTARTED");
+                    break;
+                default:
+                    statusString = `Estado ${newState}`;
+            }
+            updateDisplayInfo(statusString);
+        }
+
+        
+
+        // --- Lógica de Estado PLAYING ---
+        function handlePlayingState() {
+            if (!player || typeof player.getVideoData !== 'function') return;
+
+            const videoData = player.getVideoData();
+            const videoId = videoData.video_id;
+            const title = videoData.title;
+            const currentTime = player.getCurrentTime();
+
+            // Es una canción nueva si el ID cambió O si el tiempo es casi 0 (empezó desde el principio)
+            const isNewSong = (videoId !== currentVideoInfo.id) || (currentTime < 1.5); // Margen de 1.5s
+
+            if (isNewSong) {
+                console.log("handlePlayingState: Detectada nueva canción o inicio.");
+                const artist = extractArtistFromTitle(title); // Extraer artista (¡adapta esta función!)
+                // Crear URL de artwork (mqdefault es calidad media)
+                const artworkUrl = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+
+                // Actualizar información local
+                currentVideoInfo = { id: videoId, title: title, artist: artist, artwork: artworkUrl };
+                console.log("handlePlayingState: Nueva info:", currentVideoInfo);
+
+                // Notificar a la app Android con los datos de la NUEVA canción
+                if (isAndroidApp()) {
+                    Android.notifySongChanged(videoId, title, artist, artworkUrl);
+                    console.log("Llamado: Android.notifySongChanged() con datos nuevos.");
+                }
+
+                // Actualizar display HTML (si existe)
+                updateDisplayInfo("Reproduciendo");
+
+            } else {
+                 console.log("handlePlayingState: Reanudación de la misma canción detectada.");
+                 // Aquí solo llamamos a notifyPlaybackResumed (ya se hizo en onStateChange)
+                 // No necesitamos llamar a notifySongChanged de nuevo.
+                 updateDisplayInfo("Reproduciendo");
+            }
+        }
+
+        // --- Funciones Auxiliares ---
+
+        /** Verifica si la interfaz Android está disponible. */
+        function isAndroidApp() {
+            // `window.Android` es el nombre que le dimos en `addJavascriptInterface`
+            const hasInterface = typeof window.Android !== "undefined" && window.Android !== null;
+            if (!hasInterface) {
+                 console.log("Interfaz 'Android' no encontrada. Ejecutando en navegador normal?");
+            }
+            return hasInterface;
+        }
+
+        /** Extrae el artista del título (¡IMPLEMENTACIÓN MUY BÁSICA!). */
+        function extractArtistFromTitle(title) {
+            if (!title) return "Artista Desconocido";
+            const parts = title.split('-'); // Asume formato "Artista - Título"
+            if (parts.length > 1) {
+                return parts[0].trim();
+            }
+            const partsBy = title.split(' by '); // Asume formato "Título by Artista"
+             if (partsBy.length > 1) {
+                return partsBy[partsBy.length - 1].trim(); // Toma la última parte
+            }
+            // Fallback si no encuentra separador común
+            // Podrías intentar obtenerlo de videoData si la API lo proporcionara mejor,
+            // o idealmente, tenerlo desde tu backend.
+            // return videoData.author // Esto no suele funcionar bien para música
+            return "Artista Desconocido";
+        }
+
+        /** Actualiza la información mostrada en el HTML. */
+        function updateDisplayInfo(status) {
+            const statusEl = document.getElementById('status');
+            const videoIdEl = document.getElementById('videoId');
+            const titleEl = document.getElementById('title');
+            const artistEl = document.getElementById('artist');
+
+            if (statusEl) statusEl.textContent = status || 'N/A';
+            if (videoIdEl) videoIdEl.textContent = currentVideoInfo.id || 'N/A';
+            if (titleEl) titleEl.textContent = currentVideoInfo.title || 'N/A';
+            if (artistEl) artistEl.textContent = currentVideoInfo.artist || 'N/A';
+        }
+
+        // --- Funciones llamadas desde Android (o botones de debug) ---
+
+        /** Carga y reproduce la siguiente canción de la playlist. */
+        function playNextTrack() {
+            console.log("playNextTrack: Intentando reproducir siguiente...");
+            currentPlaylistIndex++;
+            if (currentPlaylistIndex >= playlistVideoIds.length) {
+                currentPlaylistIndex = 0; // Volver al inicio de la lista
+                 console.log("playNextTrack: Fin de la lista, volviendo al inicio.");
+            }
+            const nextVideoId = playlistVideoIds[currentPlaylistIndex];
+            console.log("playNextTrack: Cargando video ID:", nextVideoId, "en índice:", currentPlaylistIndex);
+            if (player && typeof player.loadVideoById === 'function') {
+                player.loadVideoById(nextVideoId); // Carga Y empieza a reproducir
+            } else {
+                console.error("playNextTrack: El reproductor no está listo o no existe.");
+            }
+        }
+
+        /** Carga y reproduce la canción anterior de la playlist. */
+        function playPreviousTrack() {
+             console.log("playPreviousTrack: Intentando reproducir anterior...");
+            currentPlaylistIndex--;
+            if (currentPlaylistIndex < 0) {
+                currentPlaylistIndex = playlistVideoIds.length - 1; // Ir al final de la lista
+                 console.log("playPreviousTrack: Inicio de la lista, yendo al final.");
+            }
+            const prevVideoId = playlistVideoIds[currentPlaylistIndex];
+             console.log("playPreviousTrack: Cargando video ID:", prevVideoId, "en índice:", currentPlaylistIndex);
+            if (player && typeof player.loadVideoById === 'function') {
+                player.loadVideoById(prevVideoId);
+            } else {
+                 console.error("playPreviousTrack: El reproductor no está listo o no existe.");
+            }
+        }
+
+        /** Alterna entre Play y Pause en el reproductor web. */
+        function togglePlayPause() {
+            console.log("togglePlayPause: Intentando alternar estado...");
+            if (player && typeof player.getPlayerState === 'function') {
+                const currentState = player.getPlayerState();
+                 console.log("togglePlayPause: Estado actual del reproductor:", currentState);
+                if (currentState === YT.PlayerState.PLAYING || currentState === YT.PlayerState.BUFFERING) {
+                     console.log("togglePlayPause: Pausando video...");
+                    player.pauseVideo();
+                } else {
+                     console.log("togglePlayPause: Reproduciendo video...");
+                    player.playVideo();
+                }
+            } else {
+                 console.error("togglePlayPause: El reproductor no está listo o no existe.");
+            }
+        }
+
+        
 
     </script>
 
