@@ -1,4 +1,6 @@
-<html><head>
+<!DOCTYPE html>
+<html>
+<head>
     <title>VibeTurn Web Player (Ejemplo)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -29,7 +31,7 @@
     <h1>VibeTurn - Reproductor Web</h1>
 
     <div id="player-container">
-        <iframe id="youtube-player" frameborder="0" allowfullscreen="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" title="Rick Astley - Never Gonna Give You Up (Official Music Video)" width="640" height="360" src="https://www.youtube.com/embed/dQw4w9WgXcQ?playsinline=1&amp;enablejsapi=1&amp;origin=https%3A%2F%2Fapp.whatsnode.com&amp;widgetid=1&amp;forigin=https%3A%2F%2Fapp.whatsnode.com%2F&amp;aoriginsup=0&amp;vf=6"></iframe>
+        <div id="youtube-player"></div>
     </div>
 
     <div id="controls">
@@ -41,13 +43,13 @@
 
     <div id="info">
         <h2>Información Actual:</h2>
-        <p>Estado: <span id="status">Listo (ID: dQw4w9WgXcQ)</span></p>
+        <p>Estado: <span id="status">Esperando...</span></p>
         <p>Video ID: <span id="videoId">N/A</span></p>
         <p>Título: <span id="title">N/A</span></p>
         <p>Artista: <span id="artist">N/A</span></p>
     </div>
 
-    <script type="text/javascript" id="www-widgetapi-script" src="https://www.youtube.com/s/player/ab11fe69/www-widgetapi.vflset/www-widgetapi.js" async=""></script><script src="https://www.youtube.com/iframe_api"></script><script>
+    <script>
         // --- Configuración ---
         // ¡¡REEMPLAZA ESTO CON TU LÓGICA REAL DE PLAYLIST!!
         const playlistVideoIds = [
@@ -321,5 +323,5 @@
 
     </script>
 
-
-</body></html>
+</body>
+</html>
