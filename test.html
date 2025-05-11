@@ -28,7 +28,7 @@
 </head>
 <body>
 
-    <h1>VibeTurn - Reproductor test2</h1>
+    <h1>VibeTurn - Reproductor test3</h1>
 
     <div id="player-container">
         <div id="youtube-player"></div>
@@ -91,6 +91,7 @@
                     //'onError': onPlayerError // Añadir manejo de errores básico
                 }
             });
+            delay(8);
             handlePlayingState();
             if (isAndroidApp()) {
                 Android.notifyPlaybackResumed();
@@ -266,6 +267,7 @@
                 } else {
                      console.log("togglePlayPause: Reproduciendo video...");
                     player.playVideo();
+                    handlePlayingState();
                     if (isAndroidApp()) {
                         Android.notifyPlaybackResumed();
                         console.log("Llamado: Android.notifyPlaybackResumed()");
