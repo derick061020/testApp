@@ -31,7 +31,7 @@
     <h1>VibeTurn - Reproductor Web</h1>
 
     <div id="player-container">
-        <video controls width="320" height="240" src="" id="youtube-player" autoplay>
+        <video controls width="320" height="240" src="" playsinline="" id="youtube-player" autoplay="">
           Your browser does not support the video tag.
         </video> 
     </div>
@@ -305,7 +305,6 @@
 
          console.log("onPlayerReady: Reproductor listo.");
          updateDisplayInfo("Listo (ID: " + initialVideoId + ")");
-         player.play()
          if (isAndroidApp()) {
             Android.notifyPlaybackResumed();
             console.log("Llamado: Android.notifyPlaybackResumed()");
