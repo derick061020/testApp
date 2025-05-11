@@ -263,22 +263,7 @@
         }
 
         /** Alterna entre Play y Pause en el reproductor web. */
-        function togglePlayPause() {
-            console.log("togglePlayPause: Intentando alternar estado...");
-            if (player && typeof player.getPlayerState === 'function') {
-                const currentState = player.getPlayerState();
-                 console.log("togglePlayPause: Estado actual del reproductor:", currentState);
-                if (currentState === YT.PlayerState.PLAYING || currentState === YT.PlayerState.BUFFERING) {
-                     console.log("togglePlayPause: Pausando video...");
-                    player.pauseVideo();
-                } else {
-                     console.log("togglePlayPause: Reproduciendo video...");
-                    player.playVideo();
-                }
-            } else {
-                 console.error("togglePlayPause: El reproductor no está listo o no existe.");
-            }
-        }
+        
 
         /** Función de DEBUG para simular una detención completa desde la web. */
         function stopPlaybackAndNotify() {
@@ -306,7 +291,16 @@
          console.log("onPlayerReady: Reproductor listo.");
          updateDisplayInfo("Listo (ID: " + initialVideoId + ")");
         });
-
+        function togglePlayPause() {
+            console.log("togglePlayPause: Intentando alternar estado...");
+            if (player.paused !== true) {
+                console.log("togglePlayPause: Pausando video...");
+                player.pause();
+            } else {
+                console.log("togglePlayPause: Reproduciendo video...");
+                player.play();
+            }
+        }
 
     </script>
 
