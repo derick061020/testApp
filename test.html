@@ -102,8 +102,8 @@
         }
 
         // 4. Se llama cuando el estado del reproductor cambia. ¡Aquí está la lógica principal!
-        /*function onPlayerStateChange(event) {
-            const newState = event.data;
+        function onPlayerStateChange(event) {
+            /*const newState = event.data;
             let statusString = "Desconocido";
 
             // Evitar procesar el mismo estado múltiples veces si la API lo envía rápido
@@ -160,8 +160,8 @@
                 default:
                     statusString = `Estado ${newState}`;
             }
-            updateDisplayInfo(statusString);
-        }*/
+            updateDisplayInfo(statusString);*/
+        }
 
         // 5. Manejo básico de errores del reproductor
         function onPlayerError(event) {
