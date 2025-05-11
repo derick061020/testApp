@@ -119,21 +119,15 @@
                 case YT.PlayerState.PLAYING: // 1
                     statusString = "Reproduciendo";
                     console.log("Estado: PLAYING");
-                    //handlePlayingState(); // Lógica separada para claridad
+                    handlePlayingState(); // Lógica separada para claridad
                     // Notificar a Android que se está reproduciendo (para sincronizar botón pausa)
-                    if (isAndroidApp()) {
-                        Android.notifyPlaybackResumed();
-                        console.log("Llamado: Android.notifyPlaybackResumed()");
-                    }
+                    
                     break;
                 case YT.PlayerState.PAUSED: // 2
                     statusString = "Pausado";
                      console.log("Estado: PAUSED");
                     // Notificar a Android que se pausó (para sincronizar botón play)
-                    if (isAndroidApp()) {
-                        Android.notifyPlaybackPaused();
-                        console.log("Llamado: Android.notifyPlaybackPaused()");
-                    }
+                   
                     break;
                 case YT.PlayerState.ENDED: // 0
                     statusString = "Finalizado";
