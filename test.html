@@ -120,7 +120,8 @@
             console.log("onPlayerStateChange: Nuevo estado:", newState);
 
             switch (newState) {
-                case YT.PlayerState.PLAYING: // 1
+                case YT.PlayerState.PLAYING:
+                handlePlayingState(); // 1
                     if (isAndroidApp()) {
                         Android.notifyPlaybackResumed();
                         console.log("Llamado: Android.notifyPlaybackResumed()");
