@@ -1,8 +1,109 @@
-<iframe width="720" height="405" src="https://www.youtube.com/embed/PPIQi1kl9gk" title="10 Años de HTL Hoteles!" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VibeTurn Web Player (Ejemplo)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Estilos básicos para demostración */
+        body { font-family: sans-serif; padding: 10px; }
+        #player-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px; /* O el tamaño que prefieras */
+            aspect-ratio: 16 / 9; /* Mantiene la proporción del video */
+            margin-bottom: 10px;
+            background-color: #000;
+        }
+        #youtube-player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #controls button { padding: 8px 12px; margin: 5px; }
+        #info { margin-top: 15px; border: 1px solid #ccc; padding: 10px; }
+        #info p { margin: 5px 0; }
+    </style>
+</head>
+<body>
 
+    <h1>VibeTurn - Reproductor Web</h1>
 
+    <div id="player-container">
+        <div id="youtube-player"></div>
+    </div>
 
+    <div id="controls">
+        <button onclick="playPreviousTrack()">Anterior</button>
+        <button onclick="togglePlayPause()">Play/Pause (Web)</button>
+        <button onclick="playNextTrack()">Siguiente</button>
+        <button onclick="stopPlaybackAndNotify()">Detener (DEBUG)</button>
+    </div>
 
+    <div id="info">
+        <h2>Información Actual:</h2>
+        <p>Estado: <span id="status">Esperando...</span></p>
+        <p>Video ID: <span id="videoId">N/A</span></p>
+        <p>Título: <span id="title">N/A</span></p>
+        <p>Artista: <span id="artist">N/A</span></p>
+    </div>
 
+    <script>
+        // --- Configuración ---
+        // ¡¡REEMPLAZA ESTO CON TU LÓGICA REAL DE PLAYLIST!!
+        const playlistVideoIds = [
+            'dQw4w9WgXcQ', // Rick Astley - Never Gonna Give You Up
+            'jNQXAC9IVRw', // me at the zoo (ejemplo corto)
+            'V-Mxk_NqQ2A', // Luis Fonsi - Despacito ft. Daddy Yankee
+            'kJQP7kiw5Fk'  // Ed Sheeran - Shape of You
+        ];
+        let currentPlaylistIndex = 0;
+        const initialVideoId = playlistVideoIds[currentPlaylistIndex];
 
+        // --- Variables Globales ---
+        var player; // Variable global para el objeto YT.Player
+        var currentVideoInfo = { id: null, title: null, artist: null, artwork: null };
+        var lastState = -1; // Para rastrear el último estado conocido
 
+        // --- Inicialización de la API IFrame de YouTube ---
+        // 1. Cargar la API de forma asíncrona
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // 2. Esta función se llama automáticamente cuando la API está lista.
+        function onYouTubeIframeAPIReady() {
+            console.log("onYouTubeIframeAPIReady: API lista.");
+            player = new YT.Player('youtube-player', {
+                // height: '360', // El CSS ahora controla el tamaño responsivo
+                // width: '640',
+                videoId: initialVideoId,
+                playerVars: {
+                    'playsinline': 1 // Importante para reproducción en móviles sin pantalla completa automática
+                    // 'controls': 0 // Opcional: Ocultar controles nativos de YouTube
+                    // 'autoplay': 1 // Autoplay podría no funcionar en todos los navegadores/móviles
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError // Añadir manejo de errores básico
+                }
+            });
+        }
+
+        // 3. Se llama cuando el reproductor está listo.
+        function onPlayerReady(event) {
+            console.log("onPlayerReady: Reproductor listo.");
+            updateDisplayInfo("Listo (ID: " + initialVideoId + ")");
+            // Opcional: Iniciar reproducción automáticamente (puede fallar por políticas de navegador)
+            // event.target.playVideo();
+        }
+
+        // 4. Se llama cuando el estado del reproductor cambia. ¡Aquí está la lógica principal!
+
+    </script>
+
+</body>
+</html>
