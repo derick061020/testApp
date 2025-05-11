@@ -72,7 +72,7 @@
         // 2. Esta función se llama automáticamente cuando la API está lista.
         function onYouTubeIframeAPIReady() {
             console.log("onYouTubeIframeAPIReady: API lista.");
-            this.setAttribute('src',  initialVideoId);
+            this.setAttribute('src', initialVideoId);
         }
 
         // 3. Se llama cuando el reproductor está listo.
@@ -302,6 +302,15 @@
              updateDisplayInfo("Detenido (DEBUG)");
              currentVideoInfo = { id: null, title: null, artist: null, artwork: null }; // Limpiar info
         }
+        document.addEventListener("DOMContentLoaded", function(event) {
+      /* 
+        - Code to execute when only the HTML document is loaded.
+        - This doesn't wait for stylesheets, 
+          images, and subframes to finish loading. 
+      */
+         onYouTubeIframeAPIReady();
+        });
+
 
     </script>
 
