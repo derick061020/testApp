@@ -67,12 +67,11 @@
 
         // --- Inicialización de la API IFrame de YouTube ---
         // 1. Cargar la API de forma asíncrona
-        var player = document.getElementById('youtube-player');
 
         // 2. Esta función se llama automáticamente cuando la API está lista.
         function onYouTubeIframeAPIReady() {
             console.log("onYouTubeIframeAPIReady: API lista.");
-            this.setAttribute('src', initialVideoId);
+            player.setAttribute('src', initialVideoId);
         }
 
         // 3. Se llama cuando el reproductor está listo.
@@ -308,6 +307,8 @@
         - This doesn't wait for stylesheets, 
           images, and subframes to finish loading. 
       */
+      var player = document.getElementById('youtube-player');
+
          onYouTubeIframeAPIReady();
         });
 
