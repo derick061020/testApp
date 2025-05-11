@@ -279,6 +279,7 @@
              currentVideoInfo = { id: null, title: null, artist: null, artwork: null }; // Limpiar info
         }
         function togglePlayPause() {
+            var player = document.getElementById('youtube-player');
             console.log("togglePlayPause: Intentando alternar estado...");
             if (player.paused !== true) {
                 console.log("togglePlayPause: Pausando video...");
