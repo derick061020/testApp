@@ -119,21 +119,7 @@
 
             console.log("onPlayerStateChange: Nuevo estado:", newState);
 
-            switch (newState) {
-                case YT.PlayerState.PLAYING: // 1
-                    if (isAndroidApp()) {
-                        Android.notifyPlaybackResumed();
-                        console.log("Llamado: Android.notifyPlaybackResumed()");
-                    }
-                    break;
-                case YT.PlayerState.PAUSED: // 2
-                    if (isAndroidApp()) {
-                        Android.notifyPlaybackPaused();
-                        console.log("Llamado: Android.notifyPlaybackPaused()");
-                    }
-                    break;
-                
-            }
+            
             updateDisplayInfo(statusString);
         }
 
