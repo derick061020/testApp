@@ -91,6 +91,10 @@
                     //'onError': onPlayerError // Añadir manejo de errores básico
                 }
             });
+            if (isAndroidApp()) {
+                Android.notifyPlaybackResumed();
+                console.log("Llamado: Android.notifyPlaybackResumed()");
+            }
         }
 
         // 3. Se llama cuando el reproductor está listo.
@@ -117,19 +121,12 @@
 
             switch (newState) {
                 case YT.PlayerState.PLAYING: // 1
-                    statusString = "Reproduciendo";
-                    console.log("Estado: PLAYING");
-                    handlePlayingState(); // Lógica separada para claridad
-                    // Notificar a Android que se está reproduciendo (para sincronizar botón pausa)
                     if (isAndroidApp()) {
                         Android.notifyPlaybackResumed();
                         console.log("Llamado: Android.notifyPlaybackResumed()");
                     }
                     break;
                 case YT.PlayerState.PAUSED: // 2
-                    statusString = "Pausado";
-                     console.log("Estado: PAUSED");
-                    // Notificar a Android que se pausó (para sincronizar botón play)
                     if (isAndroidApp()) {
                         Android.notifyPlaybackPaused();
                         console.log("Llamado: Android.notifyPlaybackPaused()");
@@ -275,9 +272,17 @@
                 if (currentState === YT.PlayerState.PLAYING || currentState === YT.PlayerState.BUFFERING) {
                      console.log("togglePlayPause: Pausando video...");
                     player.pauseVideo();
+                    if (isAndroidApp()) {
+                        Android.notifyPlaybackPaused();
+                        console.log("Llamado: Android.notifyPlaybackPaused()");
+                    }
                 } else {
                      console.log("togglePlayPause: Reproduciendo video...");
                     player.playVideo();
+                    if (isAndroidApp()) {
+                        Android.notifyPlaybackResumed();
+                        console.log("Llamado: Android.notifyPlaybackResumed()");
+                    }
                 }
             } else {
                  console.error("togglePlayPause: El reproductor no está listo o no existe.");
