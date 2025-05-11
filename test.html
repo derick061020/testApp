@@ -107,10 +107,7 @@
             let statusString = "Desconocido";
 
             // Evitar procesar el mismo estado múltiples veces si la API lo envía rápido
-            if (newState === lastState) {
-                // console.log("onPlayerStateChange: Estado repetido", newState, "ignorado.");
-                // return; // Descomentar si causa problemas, pero puede ocultar eventos válidos
-            }
+            
             lastState = newState; // Actualizar último estado conocido
 
             console.log("onPlayerStateChange: Nuevo estado:", newState);
