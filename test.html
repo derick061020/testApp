@@ -98,7 +98,8 @@
             console.log("onPlayerReady: Reproductor listo.");
             updateDisplayInfo("Listo (ID: " + initialVideoId + ")");
             // Opcional: Iniciar reproducción automáticamente (puede fallar por políticas de navegador)
-            // event.target.playVideo();
+            // 
+            event.target.playVideo();
         }
 
         // 4. Se llama cuando el estado del reproductor cambia. ¡Aquí está la lógica principal!
