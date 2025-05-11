@@ -267,13 +267,9 @@
                         console.log("Llamado: Android.notifyPlaybackPaused()");
                     }
                 } else {
-                     console.log("togglePlayPause: Reproduciendo video...");
+                    console.log("togglePlayPause: Reproduciendo video...");
                     player.playVideo();
                     handlePlayingState();
-                    if (isAndroidApp()) {
-                        Android.notifyPlaybackResumed();
-                        console.log("Llamado: Android.notifyPlaybackResumed()");
-                    }
                 }
             } else {
                  console.error("togglePlayPause: El reproductor no está listo o no existe.");
