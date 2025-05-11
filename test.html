@@ -290,8 +290,7 @@
 
          console.log("onPlayerReady: Reproductor listo.");
          updateDisplayInfo("Listo (ID: " + initialVideoId + ")");
-        });
-        function togglePlayPause() {
+         function togglePlayPause() {
             console.log("togglePlayPause: Intentando alternar estado...");
             if (player.paused !== true) {
                 console.log("togglePlayPause: Pausando video...");
@@ -301,6 +300,8 @@
                 player.play();
             }
         }
+        });
+        
 
     </script>
 
