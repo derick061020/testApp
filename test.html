@@ -91,6 +91,7 @@
                     //'onError': onPlayerError // Añadir manejo de errores básico
                 }
             });
+            handlePlayingState();
             if (isAndroidApp()) {
                 Android.notifyPlaybackResumed();
                 console.log("Llamado: Android.notifyPlaybackResumed()");
